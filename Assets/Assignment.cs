@@ -79,25 +79,12 @@ static public class AssignmentPart1
     {
         using (StreamWriter writer = new StreamWriter("SaveFile.txt"))
         {
-            writer.WriteLine(GameContent.partyCharacters.Count);
             foreach (PartyCharacter character in GameContent.partyCharacters)
             {
-                // Write character properties
-                writer.WriteLine(character.classID);
-                writer.WriteLine(character.health);
-                writer.WriteLine(character.mana);
-                writer.WriteLine(character.strength);
-                writer.WriteLine(character.agility);
-                writer.WriteLine(character.wisdom);
-
-                // Write equipment list
-                writer.WriteLine(character.equipment.Count);
-                foreach (var item in character.equipment)
-                {
-                    writer.WriteLine(item);
-                }
-
-
+                writer.WriteLine($"0 {character.classID} {character.health} {character.mana} {character.strength} {character.agility} {character.wisdom} {character.equipment.Count} ");
+                //writer.Write(character.equipment.Count);
+                //writer.Write("\n2");
+                writer.WriteLine($"1 {string.Join(" ", character.equipment)}");
             }
         }
     }
@@ -105,30 +92,41 @@ static public class AssignmentPart1
     static public void LoadPartyButtonPressed()
     {
         GameContent.partyCharacters.Clear();
+        PartyCharacter character = new PartyCharacter();
+        string line;
+        String[] strlist;
         try
         {
             using (StreamReader reader = new StreamReader("SaveFile.txt"))
             {
-                int characterCount = int.Parse(reader.ReadLine());
-                for (int k = 0; k < characterCount; k++)
+                
+                while ((line = reader.ReadLine()) != null)
                 {
-                    PartyCharacter character = new PartyCharacter
+                    strlist = line.Split(' ');
+                
+                    switch (int.Parse(strlist[0]))
                     {
-                        classID = int.Parse(reader.ReadLine()),
-                        health = int.Parse(reader.ReadLine()),
-                        mana = int.Parse(reader.ReadLine()),
-                        strength = int.Parse(reader.ReadLine()),
-                        agility = int.Parse(reader.ReadLine()),
-                        wisdom = int.Parse(reader.ReadLine())
-                    };
+                        case 0:
+                            character = new PartyCharacter
+                            {
+                                classID = int.Parse(strlist[1]),
+                                health = int.Parse(strlist[2]),
+                                mana = int.Parse(strlist[3]),
+                                strength = int.Parse(strlist[4]),
+                                agility = int.Parse(strlist[5]),
+                                wisdom = int.Parse(strlist[6])
+                            };
+                            break;
+                        case 1:
+                            for (int i = 1; i < strlist.Length; i++)
+                            {
+                                character.equipment.AddLast(int.Parse(strlist[i]));
+                            }
 
-                    int equipmentCount = int.Parse(reader.ReadLine());
-                    for (int i = 0; i < equipmentCount; i++)
-                    {
-                        character.equipment.AddLast(int.Parse(reader.ReadLine()));
+                            GameContent.partyCharacters.AddLast(character);
+                            break;
+
                     }
-
-                    GameContent.partyCharacters.AddLast(character);
                 }
             }
         }

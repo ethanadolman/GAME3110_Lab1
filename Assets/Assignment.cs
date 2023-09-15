@@ -82,8 +82,6 @@ static public class AssignmentPart1
             foreach (PartyCharacter character in GameContent.partyCharacters)
             {
                 writer.WriteLine($"0 {character.classID} {character.health} {character.mana} {character.strength} {character.agility} {character.wisdom} {character.equipment.Count} ");
-                //writer.Write(character.equipment.Count);
-                //writer.Write("\n2");
                 writer.WriteLine($"1 {string.Join(" ", character.equipment)}");
             }
         }
@@ -152,7 +150,7 @@ static public class AssignmentPart1
 //  This will enable the needed UI/function calls for your to proceed with your assignment.
 static public class AssignmentConfiguration
 {
-    public const int PartOfAssignmentThatIsInDevelopment = 1;
+    public const int PartOfAssignmentThatIsInDevelopment = 2;
 }
 
 /*
@@ -196,11 +194,29 @@ static public class AssignmentPart2
     static public void GameStart()
     {
         listOfPartyNames = new List<string>();
-        listOfPartyNames.Add("sample 1");
-        listOfPartyNames.Add("sample 2");
-        listOfPartyNames.Add("sample 3");
+        string line;
+        String[] strlist;
+        try
+        {
+            using (StreamReader reader = new StreamReader("SaveFile.txt"))
+            {
 
-        GameContent.RefreshUI();
+                while ((line = reader.ReadLine()) != null)
+                {
+                    strlist = line.Split(' ');
+
+                    if (strlist[0] == "0")
+                        listOfPartyNames.Add(strlist[1]);
+                    
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading file: {ex.Message}");
+
+        }
+
     }
 
     static public List<string> GetListOfPartyNames()
@@ -210,16 +226,181 @@ static public class AssignmentPart2
 
     static public void LoadPartyDropDownChanged(string selectedName)
     {
+        GameContent.partyCharacters.Clear();
+        PartyCharacter character = new PartyCharacter();
+        string line;
+        String[] strlist;
+        bool partylocated = false;
+        Debug.Log($"finding: {selectedName}");
+        try
+        {
+            using (StreamReader reader = new StreamReader("SaveFile.txt"))
+            {
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    strlist = line.Split(' ');
+
+                    switch (int.Parse(strlist[0]))
+                    {
+                        case 0:
+                            if (partylocated)
+                            {
+                                GameContent.RefreshUI();
+                                Debug.Log($"Class {selectedName} has been built");
+                                return;
+                            }
+
+                            Debug.Log($"Checking {strlist[1]}");
+                            if (strlist[1] == selectedName)
+                            {
+                                partylocated = true;
+                                Debug.Log($"found: {selectedName}");
+                            }
+
+                            break;
+                        case 1:
+                            if (!partylocated) break;
+                            character = new PartyCharacter
+                            {
+                                classID = int.Parse(strlist[1]),
+                                health = int.Parse(strlist[2]),
+                                mana = int.Parse(strlist[3]),
+                                strength = int.Parse(strlist[4]),
+                                agility = int.Parse(strlist[5]),
+                                wisdom = int.Parse(strlist[6])
+                            };
+                            break;
+                        case 2:
+                            if (!partylocated) break;
+                           // Debug.Log($"armor: {line}");
+                            for (int i = 1; i < strlist.Length; i++)
+                            {
+                                character.equipment.AddLast(int.Parse(strlist[i]));
+                            }
+
+                            GameContent.partyCharacters.AddLast(character);
+                            break;
+
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading file: {ex.Message}");
+
+        }
+        if(!partylocated)
+            Debug.Log($"Party {selectedName} does not exist");
+
         GameContent.RefreshUI();
     }
 
     static public void SavePartyButtonPressed()
     {
+        bool append = true;
+        if (GetListOfPartyNames().Count == 0)
+            append = false;
+
+        foreach (var name in listOfPartyNames)
+        {
+            if (name == GameContent.GetPartyNameFromInput())
+            {
+                Debug.Log($"Error: Party with name {GameContent.GetPartyNameFromInput()} already exists");
+                DeletePartyButtonPressed();
+                break;
+            }
+        }
+        using (StreamWriter writer = new StreamWriter("SaveFile.txt", append))
+        {
+            
+            writer.WriteLine($"0 {GameContent.GetPartyNameFromInput()}");
+            foreach (PartyCharacter character in GameContent.partyCharacters)
+            {
+                
+                writer.WriteLine($"1 {character.classID} {character.health} {character.mana} {character.strength} {character.agility} {character.wisdom} {character.equipment.Count} ");
+                writer.WriteLine($"2 {string.Join(" ", character.equipment)}");
+            }
+        }
+        GetListOfPartyNames().Add(GameContent.GetPartyNameFromInput());
         GameContent.RefreshUI();
     }
 
     static public void DeletePartyButtonPressed()
     {
+        bool partyexists = false;
+        foreach (var name in listOfPartyNames)
+        {
+            if (name == GameContent.GetPartyNameFromInput())
+            {
+                partyexists = true;
+                break;
+            }
+        }
+
+        if (!partyexists)
+        {
+            Debug.Log($"Error: Party with name {GameContent.GetPartyNameFromInput()} does not exist");
+            return;
+        }
+        GetListOfPartyNames().Remove(GameContent.GetPartyNameFromInput());
+        string selectedName = GameContent.GetPartyNameFromInput();
+        string line;
+        String[] strlist;
+        List<string> newlines = new List<string>();
+        bool partytodelete = false;
+        try
+        {
+            using (StreamReader reader = new StreamReader("SaveFile.txt"))
+            {
+                while ((line = reader.ReadLine()) != null)
+                    {
+                        strlist = line.Split(' ');
+
+                        switch (int.Parse(strlist[0]))
+                        {
+                            case 0:
+
+                                if (strlist[1] == selectedName) 
+                                    partytodelete = true;
+                                else
+                                {
+                                    partytodelete = false;
+                                    newlines.Add(line);
+                                }
+
+                                break;
+                            case 1:
+                                if (partytodelete) break;
+                                else
+                                    newlines.Add(line);
+
+                                break;
+                            case 2:
+                                if (partytodelete) break;
+                                else
+                                    newlines.Add(line);
+
+                                break;
+                        }
+                    }
+            }
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error loading file: {ex.Message}");
+
+        }
+
+        using (StreamWriter writer = new StreamWriter("SaveFile.txt"))
+        {
+            foreach (var newline in newlines)
+            {
+                writer.WriteLine(newline);
+            }
+        }
+
         GameContent.RefreshUI();
     }
 

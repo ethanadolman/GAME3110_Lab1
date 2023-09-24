@@ -72,10 +72,10 @@ public partial class PartyCharacter
 
 
 #region Assignment Part 1
-static public class AssignmentPart1
+public static class AssignmentPart1
 {
 
-    static public void SavePartyButtonPressed()
+    public static void SavePartyButtonPressed()
     {
         using (StreamWriter writer = new StreamWriter("SaveFile.txt"))
         {
@@ -87,7 +87,7 @@ static public class AssignmentPart1
         }
     }
 
-    static public void LoadPartyButtonPressed()
+    public static void LoadPartyButtonPressed()
     {
         GameContent.partyCharacters.Clear();
         PartyCharacter character = new PartyCharacter();
@@ -148,7 +148,7 @@ static public class AssignmentPart1
 //  To inform the internal systems that you are proceeding onto the second part of this assignment,
 //  change the below value of AssignmentConfiguration.PartOfAssignmentInDevelopment from 1 to 2.
 //  This will enable the needed UI/function calls for your to proceed with your assignment.
-static public class AssignmentConfiguration
+public static class AssignmentConfiguration
 {
     public const int PartOfAssignmentThatIsInDevelopment = 2;
 }
@@ -186,28 +186,25 @@ Good luck, journey well.
 
 */
 
-static public class AssignmentPart2
+public static class AssignmentPart2
 {
 
     static List<string> listOfPartyNames;
 
-    static public void GameStart()
+    public static void GameStart()
     {
         listOfPartyNames = new List<string>();
-        string line;
-        String[] strlist;
         try
         {
             using (StreamReader reader = new StreamReader("SaveFile.txt"))
             {
-
+                string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    strlist = line.Split(' ');
+                    var strlist = line.Split(' ');
 
                     if (strlist[0] == "0")
                         listOfPartyNames.Add(strlist[1]);
-                    
                 }
             }
         }
@@ -219,27 +216,25 @@ static public class AssignmentPart2
 
     }
 
-    static public List<string> GetListOfPartyNames()
+    public static List<string> GetListOfPartyNames()
     {
         return listOfPartyNames;
     }
 
-    static public void LoadPartyDropDownChanged(string selectedName)
+    public static void LoadPartyDropDownChanged(string selectedName)
     {
         GameContent.partyCharacters.Clear();
         PartyCharacter character = new PartyCharacter();
-        string line;
-        String[] strlist;
         bool partylocated = false;
         Debug.Log($"finding: {selectedName}");
         try
         {
             using (StreamReader reader = new StreamReader("SaveFile.txt"))
             {
-
+                string line;
                 while ((line = reader.ReadLine()) != null)
                 {
-                    strlist = line.Split(' ');
+                    var strlist = line.Split(' ');
 
                     switch (int.Parse(strlist[0]))
                     {
@@ -247,7 +242,6 @@ static public class AssignmentPart2
                             if (partylocated)
                             {
                                 GameContent.RefreshUI();
-                                Debug.Log($"Class {selectedName} has been built");
                                 return;
                             }
 
@@ -273,7 +267,6 @@ static public class AssignmentPart2
                             break;
                         case 2:
                             if (!partylocated) break;
-                           // Debug.Log($"armor: {line}");
                             for (int i = 1; i < strlist.Length; i++)
                             {
                                 character.equipment.AddLast(int.Parse(strlist[i]));
@@ -297,11 +290,9 @@ static public class AssignmentPart2
         GameContent.RefreshUI();
     }
 
-    static public void SavePartyButtonPressed()
+    public static void SavePartyButtonPressed()
     {
-        bool append = true;
-        if (GetListOfPartyNames().Count == 0)
-            append = false;
+        bool append = GetListOfPartyNames().Count != 0;
 
         foreach (var name in listOfPartyNames)
         {
@@ -327,7 +318,7 @@ static public class AssignmentPart2
         GameContent.RefreshUI();
     }
 
-    static public void DeletePartyButtonPressed()
+    public static void DeletePartyButtonPressed()
     {
         bool partyexists = false;
         foreach (var name in listOfPartyNames)
@@ -346,19 +337,18 @@ static public class AssignmentPart2
         }
         GetListOfPartyNames().Remove(GameContent.GetPartyNameFromInput());
         string selectedName = GameContent.GetPartyNameFromInput();
-        string line;
-        String[] strlist;
-        List<string> newlines = new List<string>();
+        List<string> newLines = new List<string>();
         bool partytodelete = false;
         try
         {
             using (StreamReader reader = new StreamReader("SaveFile.txt"))
             {
+                string line;
                 while ((line = reader.ReadLine()) != null)
-                    {
-                        strlist = line.Split(' ');
+                {
+                    var strlist = line.Split(' ');
 
-                        switch (int.Parse(strlist[0]))
+                    switch (int.Parse(strlist[0]))
                         {
                             case 0:
 
@@ -367,24 +357,24 @@ static public class AssignmentPart2
                                 else
                                 {
                                     partytodelete = false;
-                                    newlines.Add(line);
+                                    newLines.Add(line);
                                 }
 
                                 break;
                             case 1:
                                 if (partytodelete) break;
                                 else
-                                    newlines.Add(line);
+                                    newLines.Add(line);
 
                                 break;
                             case 2:
                                 if (partytodelete) break;
                                 else
-                                    newlines.Add(line);
+                                    newLines.Add(line);
 
                                 break;
                         }
-                    }
+                }
             }
         }
         catch (Exception ex)
@@ -393,13 +383,7 @@ static public class AssignmentPart2
 
         }
 
-        using (StreamWriter writer = new StreamWriter("SaveFile.txt"))
-        {
-            foreach (var newline in newlines)
-            {
-                writer.WriteLine(newline);
-            }
-        }
+        File.WriteAllLines("SaveFile.txt", newLines.ToArray());
 
         GameContent.RefreshUI();
     }
